@@ -1,8 +1,15 @@
 from domain.User import User
 
+
 class UserService:
     def __init__(self, repository):
         self.repository = repository
+
+    def authenticate(self, email, password):
+        user = self.repository.get_by_email(email)
+        if user and user.verify_password(password):
+            return {"status": "success", "message": "Authenticated", "user": user.to_dict()}
+        return {"status": "error", "message": "Authentication failed"}
 
     def create_user(self, name, email, password):
         user = User(name, email, password)
@@ -20,8 +27,10 @@ class UserService:
         user = self.repository.get_by_id(id)
 
         if user:
-            del user['password']
-        return user
+            user_dict = user.to_dict()
+            del user_dict['password']
+            return user_dict
+        return None
 
     def delete_user(self, id):
         return self.repository.delete(id)
