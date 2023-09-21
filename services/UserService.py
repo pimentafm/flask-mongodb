@@ -8,7 +8,9 @@ class UserService:
     def authenticate(self, email, password):
         user = self.repository.get_by_email(email)
         if user and user.verify_password(password):
-            return {"status": "success", "message": "Authenticated", "user": user.to_dict()}
+            user_dict = user.to_dict()
+            del user_dict['password']
+            return {"status": "success", "message": "Authenticated", "user": user_dict}
         return {"status": "error", "message": "Authentication failed"}
 
     def create_user(self, name, email, password):
