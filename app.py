@@ -39,19 +39,46 @@ def add_user():
 def users():
     users = mongo.db.users.find()
     response = dumps(users)
+    
     return response
 
 @app.route('/user/<id>')
 def user(id):
     user = mongo.db.users.find_one({'_id': ObjectId(id)})
     response = dumps(user)
+
     return response
 
 @app.route('/delete/<id>', methods = ['DELETE'])
 def delete_user(id):
     mongo.db.users.delete_one({'_id': ObjectId(id)})
     response = jsonify("User deleted successifully!")
+
     return response
+
+@app.route('/update/<id>', methods = ['PUT'])
+def update_user(id):
+    _id = id
+    _json = request.json
+    _name = _json['name']
+    _email = _json['email']
+    _password = _json['password']
+
+    if _name and _email and _password and request.method == 'PUT':
+        _hashed_password = generate_password_hash(_password)
+        mongo.db.users.update_one({
+            '_id': ObjectId(_id['$oid']) if '$oid' in _id else ObjectId(_id)},
+            {'$set': {
+                'name': _name,
+                'email': _email,
+                'password': _hashed_password
+            }
+        })
+
+        response = jsonify("User updated successifully")
+        response.status_code = 200
+
+        return response
     
 @app.errorhandler(404)
 def not_found(error = None):
