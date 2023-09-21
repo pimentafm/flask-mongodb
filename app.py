@@ -25,7 +25,7 @@ def add_user():
         id = mongo.db.users.insert_one({
             'name': _name,
             'email': _email,
-            'password': _hashed_password  # Store the hashed password
+            'password': _hashed_password
         }).inserted_id
 
         response = jsonify("User added successfully")
@@ -34,6 +34,24 @@ def add_user():
         return response
     else:
         return not_found()
+    
+@app.route('/users')
+def users():
+    users = mongo.db.users.find()
+    response = dumps(users)
+    return response
+
+@app.route('/user/<id>')
+def user(id):
+    user = mongo.db.users.find_one({'_id': ObjectId(id)})
+    response = dumps(user)
+    return response
+
+@app.route('/delete/<id>', methods = ['DELETE'])
+def delete_user(id):
+    mongo.db.users.delete_one({'_id': ObjectId(id)})
+    response = jsonify("User deleted successifully!")
+    return response
     
 @app.errorhandler(404)
 def not_found(error = None):
