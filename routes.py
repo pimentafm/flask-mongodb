@@ -1,5 +1,4 @@
 from flask import jsonify, request, session
-from flask_login import login_required
 from bson.json_util import dumps
 
 
@@ -11,21 +10,22 @@ def init_app(app, user_service):
         _password = _json.get('password')
 
         # Authenticate the user
-        result = user_service.authenticate(_email, _password)
+        result = user_service.authenticate(_email, _password, session)
 
         if result['status'] == 'success':
             session['logged_in'] = True
             session['user'] = result['user']
             return jsonify(result), 200
         else:
-            return jsonify(result), 401
+            session['logged_in'] = False
+            return jsonify(result), 200 if result['status'] == 'success' else 401
 
     @app.route('/logout', methods=['GET'])
     def logout():
         session.pop('user', None)
+        session['logged_in'] = False
         return jsonify({'status': 'success', 'message': 'Logged out'}), 200
 
-    @login_required
     @app.route('/create_user', methods=['POST'])
     def add_user():
         _json = request.json
@@ -33,29 +33,35 @@ def init_app(app, user_service):
         _email = _json['email']
         _password = _json['password']
 
-        if _name and _email and _password and request.method == 'POST':
-            id = user_service.create_user(_name, _email, _password)
-            return jsonify("User added successfully"), 200
+        if session['logged_in']:
+            if _name and _email and _password and request.method == 'POST':
+                id = user_service.create_user(_name, _email, _password)
+                return jsonify("User added successfully"), 200
+            else:
+                return jsonify({'status': 404, 'message': 'Not found!'}), 404
         else:
-            return jsonify({'status': 404, 'message': 'Not found!'}), 404
+            return jsonify({'status': 401, 'message': 'Not authenticated!'}), 401
 
-    @login_required
     @app.route('/user/<id>', methods=['GET'])
     def get_user(id):
         user = user_service.get_user_by_id(id)
 
-        if user:
-            return dumps(user), 200
+        if session['logged_in']:
+            if user:
+                return dumps(user), 200
+            else:
+                return jsonify({'status': 404, 'message': 'User not found!'}), 404
         else:
-            return jsonify({'status': 404, 'message': 'User not found!'}), 404
+            return jsonify({'status': 401, 'message': 'Not authenticated!'}), 401
 
-    @login_required
     @app.route('/users', methods=['GET'])
     def get_users():
-        users = user_service.get_users()
-        return dumps(users), 200
+        if session['logged_in']:
+            users = user_service.get_users()
+            return dumps(users), 200
+        else:
+            return jsonify({'status': 401, 'message': 'Not authenticated!'}), 401
 
-    @login_required
     @app.route('/update/<id>', methods=['PUT'])
     def update_user(id):
         _json = request.json
@@ -63,14 +69,19 @@ def init_app(app, user_service):
         _email = _json['email']
         _password = _json['password']
 
-        if _name and _email and _password and request.method == 'PUT':
-            user_service.update_user(id, _name, _email, _password)
-            return jsonify("User updated successfully"), 200
+        if session['logged_in']:
+            if _name and _email and _password and request.method == 'PUT':
+                user_service.update_user(id, _name, _email, _password)
+                return jsonify("User updated successfully"), 200
+            else:
+                return jsonify({'status': 404, 'message': 'Not found!'}), 404
         else:
-            return jsonify({'status': 404, 'message': 'Not found!'}), 404
+            return jsonify({'status': 401, 'message': 'Not authenticated!'}), 401
 
-    @login_required
     @app.route('/delete/<id>', methods=['DELETE'])
     def delete_user(id):
-        user_service.delete_user(id)
-        return jsonify("User deleted successfully"), 200
+        if session['logged_in']:
+            user_service.delete_user(id)
+            return jsonify("User deleted successfully"), 200
+        else:
+            return jsonify({'status': 401, 'message': 'Not authenticated!'}), 401

@@ -20,4 +20,4 @@ user_service = UserService(user_repository)
 routes.init_app(app, user_service)
 
 if __name__ == "__main__":
-    app.run(debug=os.environ.get("FLASK_DEBUG", True))
+    app.run(debug=os.environ.get("FLASK_DEBUG", True), threaded=True)
