@@ -1,4 +1,5 @@
 from flask import jsonify, request, session
+from flask_login import login_required
 from bson.json_util import dumps
 
 
@@ -13,6 +14,7 @@ def init_app(app, user_service):
         result = user_service.authenticate(_email, _password)
 
         if result['status'] == 'success':
+            session['logged_in'] = True
             session['user'] = result['user']
             return jsonify(result), 200
         else:
@@ -23,6 +25,7 @@ def init_app(app, user_service):
         session.pop('user', None)
         return jsonify({'status': 'success', 'message': 'Logged out'}), 200
 
+    @login_required
     @app.route('/create_user', methods=['POST'])
     def add_user():
         _json = request.json
@@ -36,6 +39,7 @@ def init_app(app, user_service):
         else:
             return jsonify({'status': 404, 'message': 'Not found!'}), 404
 
+    @login_required
     @app.route('/user/<id>', methods=['GET'])
     def get_user(id):
         user = user_service.get_user_by_id(id)
@@ -45,11 +49,13 @@ def init_app(app, user_service):
         else:
             return jsonify({'status': 404, 'message': 'User not found!'}), 404
 
+    @login_required
     @app.route('/users', methods=['GET'])
     def get_users():
         users = user_service.get_users()
         return dumps(users), 200
 
+    @login_required
     @app.route('/update/<id>', methods=['PUT'])
     def update_user(id):
         _json = request.json
@@ -63,6 +69,7 @@ def init_app(app, user_service):
         else:
             return jsonify({'status': 404, 'message': 'Not found!'}), 404
 
+    @login_required
     @app.route('/delete/<id>', methods=['DELETE'])
     def delete_user(id):
         user_service.delete_user(id)
