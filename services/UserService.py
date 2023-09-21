@@ -9,10 +9,19 @@ class UserService:
         return self.repository.add(user)
 
     def get_users(self):
-        return self.repository.get_all()
+        users_cursor = self.repository.get_all()
+        users = list(users_cursor)
+
+        for user in users:
+            del user['password']
+        return users
 
     def get_user_by_id(self, id):
-        return self.repository.get_by_id(id)
+        user = self.repository.get_by_id(id)
+
+        if user:
+            del user['password']
+        return user
 
     def delete_user(self, id):
         return self.repository.delete(id)
