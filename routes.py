@@ -27,7 +27,7 @@ def init_app(app, user_service):
         return jsonify({'status': 'success', 'message': 'Logged out'}), 200
 
     @app.route('/create_user', methods=['POST'])
-    def add_user():
+    def create_user():
         _json = request.json
         _name = _json['name']
         _email = _json['email']
@@ -35,8 +35,11 @@ def init_app(app, user_service):
 
         if session['logged_in']:
             if _name and _email and _password and request.method == 'POST':
-                id = user_service.create_user(_name, _email, _password)
-                return jsonify("User added successfully"), 200
+                if user_service.get_user_email(_email):
+                    return jsonify({'status': 400, 'message': 'Email already registered!'}), 400
+                else:
+                    id = user_service.create_user(_name, _email, _password)
+                    return jsonify("User added successfully"), 200
             else:
                 return jsonify({'status': 404, 'message': 'Not found!'}), 404
         else:
@@ -56,8 +59,9 @@ def init_app(app, user_service):
 
     @app.route('/users', methods=['GET'])
     def get_users():
+        users = user_service.get_users()
+
         if session['logged_in']:
-            users = user_service.get_users()
             return dumps(users), 200
         else:
             return jsonify({'status': 401, 'message': 'Not authenticated!'}), 401

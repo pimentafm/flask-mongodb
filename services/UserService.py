@@ -38,6 +38,15 @@ class UserService:
             return user_dict
         return None
 
+    def get_user_email(self, id):
+        user = self.repository.get_by_email(id)
+
+        if user:
+            user_dict = user.to_dict()
+            del user_dict['password']
+            return user_dict
+        return None
+
     def delete_user(self, id):
         return self.repository.delete(id)
 
